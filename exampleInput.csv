@@ -1,0 +1,8 @@
+﻿Sub Domain,Record Type
+@,A
+@,MX
+@,TXT
+*,A
+default._domainkey,TXT
+www,A
+www,TXT
