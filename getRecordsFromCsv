@@ -1,0 +1,77 @@
+#!/usr/bin/python3
+import dns
+import dns.resolver
+import csv
+import sys
+
+
+usage = """Usage: 
+    getRecordsFromCsv domain csvFilePath [outputFilePath]
+"""
+
+domain = 'newtonproperty.co.uk'
+inFile = './newtonproperty-record-sets.csv'
+outFile = f"/home/main/acs/dns/records/{domain}.csv"
+
+def checkArguments():
+    if len(sys.argv) != 4:
+        print(usage)
+        exit()
+    for arg in sys.argv:
+        print(arg)
+
+    global domain
+    global inFile
+    global outFile
+
+    domain = sys.argv[1]
+    inFile = sys.argv[2]
+    outFile = sys.argv[3]
+
+
+
+def generateQueriesFromCsv(domain, path):
+    queries = []
+    with open(path) as f:
+        reader = csv.reader(f, delimiter=",")
+        line_count = 0
+        for row in reader:
+            if line_count == 0:
+                line_count+=1
+                continue
+            if row[0] == '' or row[0] == '@':
+                row[0] = ''
+            else:
+                row[0] = f"{row[0]}."
+
+            queries.append(row)
+            line_count+=1
+    
+    return queries
+
+def getResults(queries):
+    results = []
+    for q in queries:
+        query = f"{q[0]}{domain}"
+        result = dns.resolver.resolve(query, q[1])
+        for r in result:
+            results.append([q[0], q[1], str(r)])
+
+    return results
+
+def writeToCsv(results, path):
+    with open(path, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Sub Domain", "Record Type", "Result"])
+        for r in results:
+            writer.writerow(r)
+
+if __name__ == '__main__':
+    checkArguments()
+    queries = generateQueriesFromCsv(domain, inFile)
+    results = getResults(queries)
+
+    writeToCsv(results, outFile)
+
+    for r in results:
+        print(r)
